@@ -1,0 +1,7 @@
+# Keep local env files and build output out of the Vercel upload; the build
+# reads NEXT_PUBLIC_* from the Vercel project environment instead.
+.env
+.env.*
+node_modules/
+.next/
+tsconfig.tsbuildinfo

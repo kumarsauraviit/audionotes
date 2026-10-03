@@ -1,0 +1,70 @@
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Source+Serif+4:wght@400;600&display=swap");
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/*
+ * Design tokens. Tailwind v4 maps `--color-*` to color utilities, so these
+ * power `bg-canvas`, `text-ink`, `border-border`, `font-read`, etc.
+ */
+@theme {
+  --color-ink: #18211d;
+  --color-muted: #eef1f3;
+  --color-muted-foreground: #5f6d66;
+  --color-soft-muted: #6b7871;
+  --color-line: #dbe1da;
+  --color-paper: #ffffff;
+  --color-canvas: #f6f7f3;
+  --color-accent: #0f6b62;
+  --color-accent-dark: #0b544d;
+  --color-accent-wash: #e8f1ef;
+  --color-green: #2f7a54;
+  --color-orange: #a8641c;
+  --color-danger: #b23a2e;
+  --color-mark: #f0d264;
+
+  /* shadcn/ui semantic aliases */
+  --color-background: #f6f7f3;
+  --color-foreground: #18211d;
+  --color-card: #ffffff;
+  --color-card-foreground: #18211d;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #18211d;
+  --color-primary: #0f6b62;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #e8f1ef;
+  --color-secondary-foreground: #0b544d;
+  --color-surface: #eef1f3;
+  --color-surface-foreground: #18211d;
+  --color-destructive: #b23a2e;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #dbe1da;
+  --color-input: #dbe1da;
+  --color-ring: rgba(15, 107, 98, 0.38);
+
+  --font-ui: "Instrument Sans", "Aptos", "Segoe UI", system-ui, sans-serif;
+  --font-read: "Source Serif 4", Georgia, "Times New Roman", serif;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    font-family: var(--font-ui);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  button:not(:disabled),
+  [role="button"] {
+    cursor: pointer;
+  }
+}

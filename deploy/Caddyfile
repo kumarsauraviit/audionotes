@@ -1,0 +1,15 @@
+# Caddy terminates TLS (automatic Let's Encrypt) and reverse-proxies the API.
+# DOMAIN is injected from .env by docker-compose. If it is left at the default
+# "localhost", Caddy uses its internal CA (fine for a quick smoke test only).
+
+{$DOMAIN:localhost} {
+	encode zstd gzip
+
+	# Server-Sent Events for Q&A streaming must not be buffered.
+	@stream path /api/notes/*/ask/stream
+	reverse_proxy @stream api:8000 {
+		flush_interval -1
+	}
+
+	reverse_proxy api:8000
+}

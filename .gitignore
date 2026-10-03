@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+node_modules/
+.next/
+dist/
+uploads/
+*.db
+.DS_Store
+.deploy-stage/
+.vercel/
+.pytest_cache/
+*.tsbuildinfo

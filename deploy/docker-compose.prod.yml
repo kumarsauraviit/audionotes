@@ -1,0 +1,162 @@
+# Production stack for the Audio Notes backend on a Compute Engine VM.
+# Everything runs on the VM: Caddy (TLS), FastAPI, the Celery worker, and
+# Postgres + Redis as containers with persistent volumes. Supabase Storage
+# (audio objects) is the only external service.
+#
+# On the VM this file lives at /opt/audionotes/docker-compose.yml next to a
+# Caddyfile and a .env file. Compose reads .env for the ${...} interpolation
+# below and passes it to the containers via env_file.
+#
+# Postgres and Redis ports are NOT published, so they are only reachable from
+# the other containers on the compose network.
+
+name: audionotes
+
+x-app: &app
+  image: ${IMAGE:?set IMAGE in .env}
+  env_file:
+    - .env
+  environment:
+    # Derived from POSTGRES_* so the credentials live in exactly one place.
+    # `environment` takes precedence over env_file.
+    DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-audionotes}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-audionotes}
+    REDIS_URL: redis://redis:6379/0
+  restart: unless-stopped
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-audionotes}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-audionotes}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # AOF persistence so queued Celery tasks survive a restart.
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  api:
+    <<: *app
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      # Trust Caddy's X-Forwarded-* headers.
+      - --proxy-headers
+      - --forwarded-allow-ips
+      - "*"
+    expose:
+      - "8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  worker:
+    <<: *app
+    command:
+      - celery
+      - -A
+      - app.queue.celery_app
+      - worker
+      - --loglevel=info
+      # The tasks call asyncio.run(), which is not fork-safe; solo matches the
+      # documented local setup.
+      - --pool=solo
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_started
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "celery -A app.queue.celery_app inspect ping --timeout 10"
+      interval: 60s
+      timeout: 20s
+      retries: 3
+      start_period: 60s
+
+  # One-shot schema migration: `docker compose run --rm migrate`.
+  # The profile keeps it out of a plain `docker compose up`.
+  migrate:
+    <<: *app
+    profiles: ["tools"]
+    restart: "no"
+    command: ["alembic", "upgrade", "head"]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_started
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  pg_data:
+  redis_data:
+  caddy_data:
+  caddy_config:
