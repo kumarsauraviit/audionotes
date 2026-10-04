@@ -685,13 +685,25 @@ def usage(
     notes = db.scalars(select(AudioNote).where(AudioNote.user_id == current_user.id)).all()
     total_seconds = sum(float(note.duration_seconds or 0.0) for note in notes)
     total_chars = sum(len(note.transcript or "") for note in notes)
-    # Rough Gnani credit estimate; refine once exact pricing is known.
-    estimated = round((total_seconds / 60.0) * 1.0, 2)
+    # Gnani pricing: STT ₹27/hour; TTS ₹27/10,000 characters.
+    # TTS is estimated from the summary text for notes with saved summary audio,
+    # applying the same character cap as the request sent to Gnani.
+    tts_chars = sum(
+        min(len(note.summary or ""), settings.gnani_tts_max_chars)
+        for note in notes
+        if note.summary_audio_path
+    )
+    stt_estimate = (total_seconds / 3600.0) * 27.0
+    tts_estimate = (tts_chars / 10_000.0) * 27.0
+    estimated = round(stt_estimate + tts_estimate, 2)
     return UsageOut(
         total_notes=len(notes),
         total_audio_seconds=round(total_seconds, 1),
         total_audio_minutes=round(total_seconds / 60.0, 1),
         total_transcript_chars=total_chars,
+        total_tts_chars=tts_chars,
+        stt_estimate_inr=round(stt_estimate, 2),
+        tts_estimate_inr=round(tts_estimate, 2),
         credits_estimate_inr=estimated,
     )
 

@@ -204,7 +204,8 @@ export default function LibraryPage() {
                 <span className="font-semibold text-ink tabular-nums">{usage.total_notes}</span> recordings ·{" "}
                 <span className="font-semibold text-ink tabular-nums">{usage.total_audio_minutes}</span> min
               </p>
-              <p className="tabular-nums">≈ ₹{usage.credits_estimate_inr.toFixed(2)} in transcription credits</p>
+              <p className="tabular-nums">≈ ₹{usage.credits_estimate_inr.toFixed(2)} estimated Gnani usage</p>
+              <p className="tabular-nums">STT ₹{usage.stt_estimate_inr.toFixed(2)} · TTS ₹{usage.tts_estimate_inr.toFixed(2)}</p>
             </div>
           )}
         </div>

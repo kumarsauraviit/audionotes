@@ -185,4 +185,7 @@ class UsageOut(BaseModel):
     total_audio_seconds: float
     total_audio_minutes: float
     total_transcript_chars: int
+    total_tts_chars: int
+    stt_estimate_inr: float
+    tts_estimate_inr: float
     credits_estimate_inr: float

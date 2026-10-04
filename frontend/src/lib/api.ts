@@ -190,6 +190,8 @@ export async function createSummaryAudio(id: string, voice?: string): Promise<No
 export async function getUsage(): Promise<{
   total_notes: number;
   total_audio_minutes: number;
+  stt_estimate_inr: number;
+  tts_estimate_inr: number;
   credits_estimate_inr: number;
 }> {
   return request(`/api/usage`, { cache: "no-store" });
