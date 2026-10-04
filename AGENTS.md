@@ -121,6 +121,7 @@ Commands (run from `deploy/`):
 - Explicit image tag: `-Tag <name>`. Default tag is the git SHA — **an uncommitted change reuses the old
   SHA, so the VM may not pull a new image**; commit first or pass `-Tag`.
 - Frontend: `./deploy-frontend.ps1 -ApiUrl https://audionotes.vercel.app -BackendOrigin https://<vm>.sslip.io -Alias audionotes.vercel.app`
+- Vercel project root is `frontend`, but the Vercel CLI must use the repository-root `audio-notes` link. If a nested `frontend/.vercel` link selects a different project, deploy from the repository root (`vercel --prod --yes`) and reset the alias with `vercel alias set <deployment-url> audionotes.vercel.app`; see `deploy/README.md`.
 - Restart just the worker is not enough after a code change — redeploy (the script recreates the containers).
 - Logs: `gcloud compute ssh audionotes-vm --zone asia-south1-a --command "cd /opt/audionotes && sudo docker compose logs -f --tail=200 api"` (also `worker`, `caddy`, `db`).
 - psql: `gcloud compute ssh audionotes-vm --zone asia-south1-a --command "cd /opt/audionotes && sudo docker compose exec -T db psql -U audionotes -d audionotes"`

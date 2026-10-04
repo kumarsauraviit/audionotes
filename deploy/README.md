@@ -166,6 +166,23 @@ The first run prompts you to log in to Vercel and link/create the project
 then points `-Alias` at the new deployment. Pass `-GithubRepo` to populate the
 architecture page link, or `-Preview` for a preview deployment.
 
+**Vercel project-root gotcha:** this project is configured with `frontend` as
+its Vercel Root Directory. The repository-root `.vercel/project.json` must be
+linked to the `audio-notes` project. Do not deploy from `frontend/` if that
+directory has its own `.vercel/project.json`: Vercel may select that nested
+project link, then look for a second `frontend/` directory and fail with
+`The specified Root Directory "frontend" does not exist.` If that happens,
+from the repository root relink to the intended project and deploy there:
+
+```powershell
+vercel link --yes --team ksauravjet --project audio-notes
+vercel --prod --yes
+vercel alias set <deployment-url> audionotes.vercel.app
+```
+
+Confirm the production and preview environment variables belong to `audio-notes`
+before deploying. Keep the Vercel Root Directory set to `frontend`.
+
 > Uploads and SSE answers are proxied by Vercel: large uploads (tens of MB) and
 > long agent streams may hit Vercel's proxy limits. For unrestricted uploads and
 > streaming, point a custom domain at the VM and set `NEXT_PUBLIC_API_URL` to it
